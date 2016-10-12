@@ -1,0 +1,2 @@
+docker run $1 --name sony-dropbox -v /home/sony/box/Dropbox:/home/sony/Dropbox \
+  -v /home/sony/box/.dropbox:/home/sony/.dropbox sonysantos/docker-dropbox:latest $2
