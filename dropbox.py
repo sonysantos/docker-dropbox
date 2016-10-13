@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# encoding=utf8
 #
 # Copyright (c) Dropbox, Inc.
 #
@@ -47,9 +46,6 @@ except ImportError:
 
 from contextlib import closing, contextmanager
 from posixpath import curdir, sep, pardir, join, abspath, commonprefix
-
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 INFO = u"Dropbox is the easiest way to share and store your files online. Want to learn more? Head to"
 LINK = u"https://www.dropbox.com/"

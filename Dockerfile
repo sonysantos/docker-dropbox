@@ -1,14 +1,27 @@
 FROM ubuntu:16.04
 
-RUN apt-get update && apt-get install -y wget python2.7 && ln -s /usr/bin/python2.7 /usr/bin/python
+# root phase
+
+# install things
+RUN apt-get update && apt-get install -y python2.7 && ln -s /usr/bin/python2.7 /usr/bin/python
+
+# locale
+COPY locale /etc/default/locale
+RUN update-locale
+
+# sony user
 RUN useradd -ms /bin/bash sony
+
+# sony phase
 USER sony
 WORKDIR /home/sony
-RUN wget -O - "https://www.dropbox.com/download?plat=lnx.x86_64" | tar xzf -
 
+# files
+ADD dropbox-dist.tgz .
 COPY dropbox.py .
 
-#CMD ./dropbox.py start && sleep 2 && ./dropbox.py exclude add * && ./dropbox.py exclude remove Projetos/web bkp
+# RUN wget -O - "https://www.dropbox.com/download?plat=lnx.x86_64" | tar xzf -
+# CMD ./dropbox.py start && sleep 2 && ./dropbox.py exclude add * && ./dropbox.py exclude remove Projetos/web bkp
 
 # CMD or RUN ./dropbox.py exlcude ???
 # tem que ser CMD porque não vai manter configuração sem o .dropbox no volume deseujado.
