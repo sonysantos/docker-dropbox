@@ -6,11 +6,10 @@ FROM ubuntu:16.04
 RUN apt-get update && apt-get install -y python2.7 && ln -s /usr/bin/python2.7 /usr/bin/python
 
 # locale
-COPY locale /etc/default/locale
-RUN update-locale
+RUN locale-gen "en_US.UTF-8" && export LANG=en_US.UTF-8
 
 # sony user
-RUN useradd -ms /bin/bash sony
+ RUN useradd -ms /bin/bash sony
 
 # sony phase
 USER sony
@@ -19,6 +18,8 @@ WORKDIR /home/sony
 # files
 ADD dropbox-dist.tgz .
 COPY dropbox.py .
+
+### END OF THE FILE ###
 
 # RUN wget -O - "https://www.dropbox.com/download?plat=lnx.x86_64" | tar xzf -
 # CMD ./dropbox.py start && sleep 2 && ./dropbox.py exclude add * && ./dropbox.py exclude remove Projetos/web bkp
