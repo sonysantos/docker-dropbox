@@ -1,0 +1,1 @@
+docker run --rm sonysantos/docker-dropbox:latest echo Language: en_US.UTF-8

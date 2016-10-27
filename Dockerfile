@@ -28,8 +28,6 @@ ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US.UTF-8
 
-EXPOSE 17500
-
 # dropbox service with selective sync
 CMD ./dropbox.py start && sleep 3 && ./dropbox.py exclude add Dropbox/Projetos/* Dropbox/* && \
   ./dropbox.py exclude remove Dropbox/Projetos/web Dropbox/bkp

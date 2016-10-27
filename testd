@@ -1,2 +1,2 @@
-docker run -it --rm -p 17500:17500 -v /home/sony/box/Dropbox:/home/sony/Dropbox \
+docker run -it --rm -v /home/sony/box/Dropbox:/home/sony/Dropbox \
   -v /home/sony/box/.dropbox:/home/sony/.dropbox sonysantos/docker-dropbox:latest bash
