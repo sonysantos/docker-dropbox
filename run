@@ -1,2 +1,2 @@
 docker run -d --name sony-dropboxd -v /home/sony/box/Dropbox:/home/sony/Dropbox \
-  -v /home/sony/box/.dropbox:/home/sony/.dropbox sonysantos/docker-dropbox:latest .dropbox-dist/dropboxd
+  -v /home/sony/box/.dropbox:/home/sony/.dropbox sonysantos/docker-dropbox:latest
