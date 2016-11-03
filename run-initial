@@ -1,2 +1,2 @@
-docker run -it --rm -v /home/sony/box/Dropbox:/home/sony/Dropbox \
-  -v /home/sony/box/.dropbox:/home/sony/.dropbox sonysantos/docker-dropbox:latest
+docker run -it --rm -v /home/sony/box/Dropbox:/home/dbox/Dropbox \
+  -v /home/sony/box/.dropbox:/home/dbox/.dropbox sonysantos/docker-dropbox:latest
