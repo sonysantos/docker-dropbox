@@ -1,0 +1,4 @@
+#!/bin/bash
+
+docker run -d --name my-dropbox -v $1/Dropbox:/home/dbox/Dropbox \
+  -v $1/.dropbox:/home/dbox/.dropbox sonysantos/docker-dropbox:latest
