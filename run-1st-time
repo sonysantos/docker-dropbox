@@ -1,4 +1,14 @@
 #!/bin/bash
 
-docker run -it --rm -v $1/Dropbox:/home/dbox/Dropbox \
-  -v $1/.dropbox:/home/dbox/.dropbox sonysantos/docker-dropbox:latest
+if [ "$1" == "" ]; then
+  BASEDIR=$HOME
+else
+  BASEDIR=$1
+fi
+
+docker run -it --rm \
+  -v $BASEDIR/Dropbox:/home/dbox/Dropbox \
+  -v $BASEDIR/.dropbox:/home/dbox/.dropbox \
+  -e DBOX_UID=`id -u` \
+  -e DBOX_GID=`id -g` \
+  sonysantos/dropbox:latest

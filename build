@@ -3,8 +3,8 @@
 docker build -t sonysantos/docker-dropbox:latest .
 
 if [ "$1" = "" ]; then
-  echo "Created sonysantos/docker-dropbox:latest!"
+  echo "Created sonysantos/dropbox:latest!"
 else
   docker tag sonysantos/docker-dropbox:latest sonysantos/docker-dropbox:$1
-  echo "Created sonysantos/docker-dropbox:$1 (latest)!"
+  echo "Created sonysantos/dropbox:$1 (latest)!"
 fi

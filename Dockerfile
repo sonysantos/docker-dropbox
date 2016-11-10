@@ -26,5 +26,15 @@ RUN wget -O - "https://www.dropbox.com/download?plat=lnx.x86_64" | tar xzf - \
 # as dbox, set locale
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8
 
+# env settings for UID and GID: they can be (and must be) overriden by docker run -e option
+ENV DBOX_UID=1000 DBOX_GID=1000
+
+# daemon process: UID and GID must be corrected at runtime
+RUN echo "#!/bin/bash" > daemon.sh ; \
+  echo "usermod -u $DBOX_UID dbox" >> daemon.sh ; \
+  echo "usermod -g $DBOX_GID dbox" >> daemon.sh ; \
+  echo ".dropbox-dist/dropboxd" >> daemon.sh ; \
+  chmod +x daemon.sh
+
 # start daemon
-CMD .dropbox-dist/dropboxd
+CMD ./daemon.sh
