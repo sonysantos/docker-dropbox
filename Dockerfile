@@ -25,5 +25,4 @@ USER root
 COPY entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD /dbox/dropbox-dist/dropboxd
-
+CMD /dbox/.dropbox-dist/dropboxd
