@@ -4,4 +4,4 @@
 usermod -u $DBOX_UID dbox
 usermod -g $DBOX_GID dbox
 
-exec gosu dbox "@"
+exec gosu dbox "$@"
