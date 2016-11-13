@@ -11,4 +11,4 @@ docker run -it --rm \
   -v $BASEDIR/.dropbox:/dbox/.dropbox \
   -e DBOX_UID=`id -u` \
   -e DBOX_GID=`id -g` \
-  sonysantos/dropbox:latest
+  sonysantos/dropbox:latest bash

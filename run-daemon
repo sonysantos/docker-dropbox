@@ -7,8 +7,8 @@ else
 fi
 
 docker run -d --name my-dropbox \
-  -v $BASEDIR/Dropbox:/home/dbox/Dropbox \
-  -v $BASEDIR/.dropbox:/home/dbox/.dropbox \
+  -v $BASEDIR/Dropbox:/dbox/Dropbox \
+  -v $BASEDIR/.dropbox:/dbox/.dropbox \
   -e DBOX_UID=`id -u` \
   -e DBOX_GID=`id -g` \
   sonysantos/dropbox:latest
