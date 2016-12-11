@@ -6,7 +6,7 @@ else
   BASEDIR=$1
 fi
 
-docker run -d --name my-dropbox \
+docker run -d --restart=always --name my-dropbox \
   -v $BASEDIR/Dropbox:/dbox/Dropbox \
   -v $BASEDIR/.dropbox:/dbox/.dropbox \
   -e DBOX_UID=`id -u` \
