@@ -20,6 +20,9 @@ WORKDIR /dbox
 RUN wget -O - "https://www.dropbox.com/download?plat=lnx.x86_64" | tar xzf - \
  && wget -O dropbox.py "https://www.dropbox.com/download?dl=packages/dropbox.py" && chmod +x dropbox.py
 
+# rename .dropbox-dist as initial
+RUN mv .dropbox-dist .dropbox-initial-dist
+
 # switch back to root to run entrypoint.sh
 USER root
 COPY entrypoint.sh /

@@ -1,1 +1,1 @@
-docker exec -it my-dropbox ./dropbox.py status
+docker exec -it -u dbox my-dropbox ./dropbox.py status

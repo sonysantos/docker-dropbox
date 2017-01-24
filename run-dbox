@@ -1,0 +1,263 @@
+#!/bin/bash
+
+INTERACTIVE=
+NAME=dbox
+BASEDIR=$HOME
+CONTAINER_NAME=$NAME
+DEFAULT_CMD=
+ATTACH_CMD=bash
+ATTACH_MODE=
+RESTART_POLICY=always
+FULLPATH=
+#USER_FULLPATH=
+SHOW_USAGE=
+VERBOSE=
+VALID_NAME="a-zA-Z0-9_.-"
+VALID_FILENAME=" /$VALID_NAME"
+ERROR_MSG=
+DOCKER_CMD=
+DOCKER_OPT="-d"
+
+USAGE="Usage: $0 [options] [NAME]
+
+NAME is a nickname for the Dropbox account. It is used both as the
+container name and as the parent directory for Dropbox and .dropbox
+subdirectories under BASEDIR, that is:
+
+BASEDIR              # base directory; see also --base-dir option below
+  +- NAME            # nickname for this Dropbox account and container
+  |   +- Dropbox     # synced documents in this Dropbox account
+  |   +- .dropbox    # local metadata for this Dropbox account
+  +- ANOTHER_NAME    # nickname for another Dropbox account, etc.
+  ...
+
+This way you can have several different Dropbox accounts running in
+paralell in the same machine, each with a different name.
+
+If omitted, NAME defaults to $NAME.
+
+Options are:
+
+  -i, --interactive
+      Run in interactive mode; useful to link dropbox account. By
+      default it runs as a daemon, unless if Dropbox or .dropbox
+      don't exist under BASEDIR/NAME. In this case they will be
+      created.
+
+  -b, --base-dir=BASEDIR
+      Sets the base directory for the NAME of a Dropbox account.
+      If omitted, it defaults to \$HOME. If it doesn't start
+      with a slash (/), it will be considered as a subdirectory
+      of \$HOME. BASEDIR must exist.
+
+  --full-path=FULLPATH
+      Full path to be used instead of BASEDIR/NAME. It must exist.
+      If it doesn't start with a slash (/) it will be considered
+      as a subdirectory of \$HOME, but note that, unlinke BASEDIR,
+      FULLPATH will not be followed by /NAME; it will be the direct
+      parent for the Dropbox and .dropbox folders. Note also that
+      NAME still will be used as the container name.
+      This option overrides the --base-dir option above.
+
+  -c, --command=CMD
+      Override default command with CMD (e.g. bash). At this moment
+      arguments are not supported.
+
+  -a, --attach[=CMD]
+      Attach CMD to a running container. If omitted, CMD defaults
+      to $ATTACH_CMD in this option. This option is always
+      interactive. Other options are ignored
+
+  --restart=RESTART_POLICY
+      Set the restart policy for the container. Default is 'no'
+      for interactive mode (i.e., run only once) and 'always'
+      for the daemon mode (i.e., restart whenever the container
+      exits).
+
+  -h, --help
+      Display this message.
+
+  -v, --verbose
+      Show info about the docker command.
+"
+
+if [[ "$#" == "0" ]]; then
+  echo "$USAGE"
+  exit 0
+fi
+
+# check existence of directory supplied by user
+check_user_supplied_dir () {
+  if [[ "$arg" != /* ]]; then
+    arg="$HOME/$arg"
+  fi
+  if [[ ! -d "$arg" ]]; then
+    echo "Path supplied via --base-dir or --fullpath doesn't exist: $arg" >&2
+    exit 1
+  fi
+}
+
+for i in "$@"; do
+
+  # test input
+
+  eqpos=`expr index "$i" "="`
+
+  if [[ $eqpos > 0 ]]; then
+    opt="${i:0:$eqpos}"
+    arg="${i:$eqpos}"
+    if [[ $arg =~ ^[$VALID_FILENAME]*[$VALID_NAME]$ ]]; then
+      opt+="FILENAME"
+    elif [[ $arg =~ ^(always|no|unless-stopped|on-failure(:[0-9]+)?)$ ]]
+      opt+="RESTART_POLICY"
+    else
+      opt+="INVALID_ARGUMENT"
+    fi
+  elif [[ $opt == -* ]]; then
+    opt=$i
+    arg=
+  elif [[ $arg =~ ^([$VALID_NAME]+)$ ]]; then
+    opt="NAME"
+    arg=$i
+  else
+    opt="INVALID_NAME"
+    arg=$i
+  fi
+
+  [[ -n "$VERBOSE" ]] && printf "Option case: $opt\nArgument: $arg"
+
+  case $opt in
+
+    -i|--interactive)
+    INTERACTIVE=1
+    ;;
+
+    -b=FILENAME|--base-dir=FILENAME)
+    check_user_supplied_dir
+    BASEDIR=$arg
+    ;;
+
+    --full-path=FILENAME)
+    check_user_supplied_dir
+    FULLPATH=$arg
+    ;;
+
+    -c=FILENAME|--command=FILENAME)
+    DEFAULT_CMD=$arg
+    ;;
+
+    -a|--attach)
+    ATTACH_MODE=1
+    ;;
+
+    -a=FILENAME|--attach=FILENAME)
+    ATTACH_MODE=1
+    ATTACH_CMD=$arg
+    ;;
+
+    --restart=RESTART_POLICY)
+    RESTART_POLICY=$arg
+    ;;
+
+    -h|--help)
+    SHOW_USAGE=1
+    ;;
+
+    -v|--verbose)
+    VERBOSE=1
+    ;;
+
+    NAME)
+    NAME=$arg
+    ;;
+
+    INVALID_NAME)
+    ERROR_MSG="Invalid name: $arg"
+    ;;
+
+    -*=INVALID_ARGUMENT)
+    ERROR_MSG="Invalid argument: $arg"
+    ;;
+
+    -*)
+    ERROR_MSG="Invalid option: $opt"
+    ;;
+
+    *)
+    ERROR_MSG="Unknown error for option $opt and argument $arg"
+    ;;
+
+  esac
+
+  shift
+
+done
+
+# check for usage and errors
+if [[ -n "$ERROR_MSG" ]]; then
+  echo "$ERROR_MSG" >&2
+  echo
+  echo "$USAGE"
+  exit 1
+fi
+
+if [[ -n "$SHOW_USAGE" ]]; then
+  echo "$USAGE"
+  exit 0
+fi
+
+check_create_dir () {
+  if [[ ! -d "$1" ]]; then
+    [[ -n "$VERBOSE" ]] && echo "Creating directory '$1'..."
+    mkdir "$1"
+    if [[ "$?" != "0" ]]; then
+      echo "Could not create $1" >&2
+      exit 1
+    fi
+    INTERACTIVE=1
+  fi
+}
+
+# set fullpath
+if [[ -z $FULLPATH ]]; then
+  FULLPATH=$BASEDIR/$NAME
+  check_create_dir "$FULLPATH"
+fi
+
+# test existence of Dropbox and .dropbox directories
+check_dbox_dirs () {
+  local dirname="$FULLPATH/$1"
+  check_create_dir "$dirname"
+}
+
+check_dbox_dirs Dropbox
+check_dbox_dirs .dropbox
+
+# attach mode
+if [[ -n "$ATTACH_MODE" ]]; then
+  DOCKER_CMD="docker exec -it $NAME $ATTACH_CMD"
+else
+
+  [[ -n "$INTERACTIVE" ]] && DOCKER_OPT="-it --rm"
+
+  [[ -n "$VERBOSE" ]] && echo "Docker options: $DOCKER_OPT"
+
+  VOLUMES="
+    -v $FULLPATH/Dropbox:/dbox/Dropbox
+    -v $FULLPATH/.dropbox:/dbox/.dropbox
+    -v dropbox-dist:/dbox/.dropbox-dist
+  "
+
+  ENV_DBOX="
+    -e DBOX_UID=`id -u`
+    -e DBOX_GID=`id -g`
+  "
+
+  IMAGE="sonysantos/dropbox:latest"
+
+  DOCKER_CMD="docker run $DOCKER_OPT --name $NAME $VOLUMES $ENV_DBOX $IMAGE $DEFAULT_CMD"
+
+  [[ -n "$VERBOSE" ]] && echo "Docker command: $DOCKER_CMD"
+fi
+
+echo "$DOCKER_CMD"
