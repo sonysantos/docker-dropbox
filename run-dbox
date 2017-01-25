@@ -3,22 +3,34 @@
 INTERACTIVE=
 NAME=dbox
 BASEDIR=$HOME
-CONTAINER_NAME=$NAME
 DEFAULT_CMD=
 ATTACH_CMD=bash
 ATTACH_MODE=
 RESTART_POLICY=always
 FULLPATH=
-#USER_FULLPATH=
-SHOW_USAGE=
 VERBOSE=
 VALID_NAME="a-zA-Z0-9_.-"
 VALID_FILENAME=" /$VALID_NAME"
 ERROR_MSG=
-DOCKER_CMD=
-DOCKER_OPT="-d"
 
-USAGE="Usage: $0 [options] [NAME]
+SHORT_HELP="
+Usage: $0 [options] [NAME]
+
+NAME is the container name and the base subdirectory for dropbox
+account, normally under \$HOME. It defaults to $NAME.
+
+Options:
+  -i, --interactive        Interactive mode (default: daemon mode)
+  -b, --base-dir=BASEDIR   Parent directory for NAME (default \$HOME)
+  --full-path=FULLPATH     Path to be used instead of BASEDIR/NAME
+  -c, --command=CMD        Set alternative command for the container
+  -a, --attach[=CMD]       Attach CMD (default: bash) to a running container
+  --restart=RESTART_POLICY Set restart policy for daemon mode
+  -h, --help               Display detailed help
+  -v, --verbose            Show info about the docker command
+"
+
+LONG_HELP="Usage: $0 [options] [NAME]
 
 NAME is a nickname for the Dropbox account. It is used both as the
 container name and as the parent directory for Dropbox and .dropbox
@@ -69,10 +81,9 @@ Options are:
       interactive. Other options are ignored
 
   --restart=RESTART_POLICY
-      Set the restart policy for the container. Default is 'no'
-      for interactive mode (i.e., run only once) and 'always'
-      for the daemon mode (i.e., restart whenever the container
-      exits).
+      Set the restart policy for the container. Applies only to
+      daemon mode. Default is 'always'. See docker documentation
+      for details.
 
   -h, --help
       Display this message.
@@ -82,7 +93,7 @@ Options are:
 "
 
 if [[ "$#" == "0" ]]; then
-  echo "$USAGE"
+  echo "$SHORT_HELP"
   exit 0
 fi
 
@@ -106,17 +117,15 @@ for i in "$@"; do
   if [[ $eqpos > 0 ]]; then
     opt="${i:0:$eqpos}"
     arg="${i:$eqpos}"
-    if [[ $arg =~ ^[$VALID_FILENAME]*[$VALID_NAME]$ ]]; then
+    if [[ "$arg" =~ ^[$VALID_FILENAME]*[$VALID_NAME]$ ]]; then
       opt+="FILENAME"
-    elif [[ $arg =~ ^(always|no|unless-stopped|on-failure(:[0-9]+)?)$ ]]
-      opt+="RESTART_POLICY"
     else
-      opt+="INVALID_ARGUMENT"
+      opt+="OTHER_ARGUMENT"
     fi
-  elif [[ $opt == -* ]]; then
+  elif [[ "$i" == -* ]]; then
     opt=$i
     arg=
-  elif [[ $arg =~ ^([$VALID_NAME]+)$ ]]; then
+  elif [[ "$i" =~ ^([$VALID_NAME]+)$ ]]; then
     opt="NAME"
     arg=$i
   else
@@ -124,7 +133,7 @@ for i in "$@"; do
     arg=$i
   fi
 
-  [[ -n "$VERBOSE" ]] && printf "Option case: $opt\nArgument: $arg"
+  [[ -n "$VERBOSE" ]] && echo "Option: $opt ($arg)"
 
   case $opt in
 
@@ -155,12 +164,17 @@ for i in "$@"; do
     ATTACH_CMD=$arg
     ;;
 
-    --restart=RESTART_POLICY)
-    RESTART_POLICY=$arg
+    --restart=*)
+    if [[ "$arg" =~ ^(always|no|unless-stopped|on-failure(:[0-9]+)?)$ ]]; then
+      RESTART_POLICY=$arg
+    else
+      ERROR_MSG="Invalid restart policy: $arg"
+    fi
     ;;
 
     -h|--help)
-    SHOW_USAGE=1
+    echo "$LONG_HELP"
+    exit 0
     ;;
 
     -v|--verbose)
@@ -175,7 +189,7 @@ for i in "$@"; do
     ERROR_MSG="Invalid name: $arg"
     ;;
 
-    -*=INVALID_ARGUMENT)
+    -*=OTHER_ARGUMENT)
     ERROR_MSG="Invalid argument: $arg"
     ;;
 
@@ -189,22 +203,16 @@ for i in "$@"; do
 
   esac
 
+  # check for errors
+  if [[ -n "$ERROR_MSG" ]]; then
+    echo "$ERROR_MSG" >&2
+    echo "$SHORT_HELP"
+    exit 1
+  fi
+
   shift
 
 done
-
-# check for usage and errors
-if [[ -n "$ERROR_MSG" ]]; then
-  echo "$ERROR_MSG" >&2
-  echo
-  echo "$USAGE"
-  exit 1
-fi
-
-if [[ -n "$SHOW_USAGE" ]]; then
-  echo "$USAGE"
-  exit 0
-fi
 
 check_create_dir () {
   if [[ ! -d "$1" ]]; then
@@ -238,15 +246,16 @@ if [[ -n "$ATTACH_MODE" ]]; then
   DOCKER_CMD="docker exec -it $NAME $ATTACH_CMD"
 else
 
-  [[ -n "$INTERACTIVE" ]] && DOCKER_OPT="-it --rm"
-
-  [[ -n "$VERBOSE" ]] && echo "Docker options: $DOCKER_OPT"
+  if [[ -n "$INTERACTIVE" ]]; then
+    DOCKER_OPT="-it --rm"
+  else
+    DOCKER_OPT="-d --restart=$RESTART_POLICY"
+  fi
 
   VOLUMES="
     -v $FULLPATH/Dropbox:/dbox/Dropbox
     -v $FULLPATH/.dropbox:/dbox/.dropbox
-    -v dropbox-dist:/dbox/.dropbox-dist
-  "
+    -v dropbox-dist:/dbox/.dropbox-dist"
 
   ENV_DBOX="
     -e DBOX_UID=`id -u`
@@ -256,8 +265,6 @@ else
   IMAGE="sonysantos/dropbox:latest"
 
   DOCKER_CMD="docker run $DOCKER_OPT --name $NAME $VOLUMES $ENV_DBOX $IMAGE $DEFAULT_CMD"
-
-  [[ -n "$VERBOSE" ]] && echo "Docker command: $DOCKER_CMD"
 fi
 
-echo "$DOCKER_CMD"
+[[ -n "$VERBOSE" ]] && echo -e "\n$DOCKER_CMD"
