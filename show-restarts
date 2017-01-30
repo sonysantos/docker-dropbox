@@ -1,0 +1,5 @@
+#!/bin/bash
+
+[[ -n "$1" ]] && NAME="$1" || NAME="dbox"
+
+docker inspect $NAME | grep RestartCount
