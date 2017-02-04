@@ -239,7 +239,7 @@ if [[ -z $FULL_PATH ]]; then
 fi
 
 # if dropbox is empty set INTERACTIVE mode
-[[ ! d "$FULL_PATH/.dropbox" || ! "$(ls -A $FULL_PATH/.dropbox)" ]] && \
+[[ ! -d "$FULL_PATH/.dropbox" || ! "$(ls -A $FULL_PATH/.dropbox)" ]] && \
   INTERACTIVE=1
 
 # attach mode
