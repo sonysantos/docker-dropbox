@@ -1,16 +1,18 @@
 #!/bin/bash
 
-# test .dropbox-dist
+# remove empty .dropbox-dist
+if [[ -d "/dbox/.dropbox-dist" && ! "$(ls -A /dbox/.dropbox-dist)" ]]; then
+  rm -rf /dbox/.dropbox-dist
+fi
+
+# copy .dropbox-dist if it does not exist
 if [[ ! -d "/dbox/.dropbox-dist" ]]; then
-  mkdir /dbox/.dropbox-dist
+  cd /opt
+  cp -r .dropbox-dist /dbox/
   chown $DBOX_UID:$DBOX_GID /dbox/.dropbox-dist
 fi
 
-# fill it if empty
-if [[ ! "$(ls -A /dbox/.dropbox-dist)" ]]; then
-  cd /dbox/.dropbox-initial-dist
-  cp -rp * /dbox/.dropbox-dist/
-fi
+cd /dbox
 
 # set proper UID and GID
 usermod -u $DBOX_UID dbox

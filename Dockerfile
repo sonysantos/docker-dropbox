@@ -13,18 +13,13 @@ ENV LANG=C.UTF-8 DBOX_UID=1000 DBOX_GID=1000
 
 # dbox: dropbox user
 RUN useradd -ms /bin/bash -d /dbox dbox
-USER dbox
-WORKDIR /dbox
 
 # install dropbox
-RUN wget -O - "https://www.dropbox.com/download?plat=lnx.x86_64" | tar xzf - \
+RUN cd /opt \
+ && wget -O - "https://www.dropbox.com/download?plat=lnx.x86_64" | tar xzf - \
  && wget -O dropbox.py "https://www.dropbox.com/download?dl=packages/dropbox.py" && chmod +x dropbox.py
 
-# rename .dropbox-dist as initial
-RUN mv .dropbox-dist .dropbox-initial-dist
-
-# switch back to root to run entrypoint.sh
-USER root
+# run entrypoint.sh
 COPY entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 

@@ -18,12 +18,14 @@ ERROR_MSG=
 SHORT_HELP="
 Usage: $0 [options] [NAME]
 
-NAME is the container name and the base subdirectory for dropbox
-account, normally under \$HOME/BASE_DIR/. It defaults to $NAME.
+NAME is the container name and the base directory for dropbox
+account, normally under \$HOME/BASE_DIR/. Default name is $NAME.
+
+Use -h or --help option for more details.
 
 Options:
   -i, --interactive        Interactive mode (default: daemon mode)
-  -b, --base-dir=BASE_DIR  Parent directory for NAME under \$HOME
+  -b, --base-dir=BASE_DIR  Parent directory of NAME under \$HOME
   --full-path=FULL_PATH    Path to be used instead of \$HOME/BASE_DIR/NAME
   -c, --command=CMD        Set alternative command for the container
   -a, --attach[=CMD]       Attach CMD (default: bash) to a running container
@@ -37,7 +39,9 @@ LONG_HELP="Script to generate and excecute docker command to run a dropbox conta
 
 Usage: $0 [options] [NAME]
 
-NAME is a nickname for the Dropbox account. It is used both as the container name and as the parent directory for Dropbox subdirectories (Dropbox, .dropbox and .dropbox-dist) under BASE_DIR, that is:
+NAME is a nickname for the Dropbox account. It is used both as the container name and as the base directory for Dropbox account, which contais subdirectories like Dropbox, .dropbox and .dropbox-dist.
+
+The NAME directory is a subdirectory of BASE_DIR:
 
 BASE_DIR           # base directory; see also --base-dir option below
   +- NAME          # nickname for this Dropbox account and container
@@ -46,7 +50,7 @@ BASE_DIR           # base directory; see also --base-dir option below
   +- ANOTHER_NAME  # nickname for another Dropbox account, etc.
   ...
 
-This way you can have several different Dropbox accounts running in paralell in the same machine, each with a different name.
+That way you can have several different Dropbox accounts running in paralell in the same machine, each with a different name.
 
 If omitted, NAME defaults to $NAME.
 
@@ -60,7 +64,7 @@ Options are:
       Run in interactive mode; useful to link dropbox account. By default it runs as a daemon, unless if Dropbox subdirectories don't exist under \$HOME/BASE_DIR/NAME. In this case they will be created.
 
   -b, --base-dir=BASE_DIR
-      BASE_DIR is a subdirectory of \$HOME and it's a base for several dropbox accounts, each one under a different NAME under BASE_DIR. If omitted, it defaults to $BASE_DIR.
+      BASE_DIR is a subdirectory of \$HOME and it's a base for several dropbox accounts, each one under a different NAME under BASE_DIR. If omitted, default value is $BASE_DIR.
 
   --full-path=FULL_PATH
       If the path of the dropbox account is not of the form \$HOME/BASE_DIR/NAME, you can set the full path with this option. It must exist. If it doesn't start with a slash (/) it will be considered as a subdirectory of \$HOME. Besides it will not be followed by /NAME, NAME still will be used as the container name. This option overrides the --base-dir option above.
@@ -69,7 +73,7 @@ Options are:
       Override default command with CMD (e.g. bash). At this moment arguments for CMD are not supported.
 
   -a, --attach[=CMD]
-      Attach CMD to a running container. If omitted, CMD defaults to $ATTACH_CMD in this option. This option is always interactive. Other options are ignored.
+      Attach CMD to a running container. If omitted, the default CMD is $ATTACH_CMD in this option. This option is always interactive. Other options are ignored.
 
   --restart=RESTART_POLICY
       Set the restart policy for the container. Applies only to daemon mode. Default is 'always'. See docker documentation for details.
@@ -222,34 +226,21 @@ for i in "$@"; do
 
 done
 
-check_create_dir () {
-  if [[ ! -d "$1" ]]; then
+# set fullpath
+if [[ -z $FULL_PATH ]]; then
+  FULL_PATH=$HOME/$BASE_DIR/$NAME
+  if [[ ! -d "$FULL_PATH" ]]; then
     [[ -z "$QUIET" ]] && echo "Creating directory '$1'..."
-    mkdir $2 "$1" || {
+    mkdir -p "$FULL_PATH" || {
       echo "Could not create $1" >&2
       exit 1
     }
   fi
-}
-
-# set fullpath
-if [[ -z $FULL_PATH ]]; then
-  FULL_PATH=$HOME/$BASE_DIR/$NAME
-  check_create_dir "$FULL_PATH" -p
 fi
 
-# test existence of Dropbox and .dropbox directories
-check_dbox_dirs () {
-  local dirname="$FULL_PATH/$1"
-  check_create_dir "$dirname"
-}
-
-check_dbox_dirs Dropbox
-check_dbox_dirs .dropbox
-check_dbox_dirs .dropbox-dist
-
 # if dropbox is empty set INTERACTIVE mode
-[[ ! "$(ls -A $FULL_PATH/.dropbox)" ]] && INTERACTIVE=1
+[[ ! d "$FULL_PATH/.dropbox" || ! "$(ls -A $FULL_PATH/.dropbox)" ]] && \
+  INTERACTIVE=1
 
 # attach mode
 if [[ -n "$ATTACH_MODE" ]]; then
@@ -262,19 +253,18 @@ else
     DOCKER_OPT="-d --restart=$RESTART_POLICY"
   fi
 
-  VOLUMES="
-    -v $FULL_PATH/Dropbox:/dbox/Dropbox
-    -v $FULL_PATH/.dropbox:/dbox/.dropbox
-    -v $FULL_PATH/.dropbox-dist:/dbox/.dropbox-dist"
+  VOLUME="-v $FULL_PATH:/dbox"
 
-  ENV_DBOX="
-    -e DBOX_UID=`id -u`
-    -e DBOX_GID=`id -g`
-  "
+  ENV_DBOX="-e DBOX_UID=`id -u` -e DBOX_GID=`id -g`"
 
   IMAGE="sonysantos/dropbox:latest"
 
-  DOCKER_CMD="docker run $DOCKER_OPT --name $NAME $VOLUMES $ENV_DBOX $IMAGE $DEFAULT_CMD"
+  DOCKER_CMD="docker run $DOCKER_OPT
+    --name $NAME
+    $VOLUME
+    $ENV_DBOX
+    $IMAGE
+    $DEFAULT_CMD"
 fi
 
 [[ -z "$QUIET" || -n "$DEBUG" ]] && \

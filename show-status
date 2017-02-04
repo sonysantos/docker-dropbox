@@ -2,4 +2,4 @@
 
 [[ -n "$1" ]] && NAME="$1" || NAME="dbox"
 
-docker exec -it -u dbox $NAME ./dropbox.py status
+docker exec -it -u dbox $NAME /opt/dropbox.py status
