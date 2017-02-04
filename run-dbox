@@ -280,4 +280,7 @@ fi
 [[ -z "$QUIET" || -n "$DEBUG" ]] && \
   echo -e "\nGenerated Docker command:\n$DOCKER_CMD"
 
-[[ -z "$DEBUG" ]] && `$DOCKER_CMD`
+[[ -z "$DEBUG" ]] && {
+  [[ -z "$QUIET" ]] && echo -e "\nExecuting Docker Command..."
+  `$DOCKER_CMD`
+}
