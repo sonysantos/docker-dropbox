@@ -30,10 +30,12 @@ Options:
   --restart=RESTART_POLICY Set restart policy for daemon mode
   -h, --help               Display detailed help
   -q, --quiet              Show no info at all
-  --debug                  Show specific info for debugging purpose
+  --debug                  Show additional info for debugging this script
 "
 
-LONG_HELP="Usage: $0 [options] [NAME]
+LONG_HELP="Script to generate and excecute docker command to run a dropbox container.
+
+Usage: $0 [options] [NAME]
 
 NAME is a nickname for the Dropbox account. It is used both as the container name and as the parent directory for Dropbox subdirectories (Dropbox, .dropbox and .dropbox-dist) under BASE_DIR, that is:
 
@@ -61,13 +63,13 @@ Options are:
       BASE_DIR is a subdirectory of \$HOME and it's a base for several dropbox accounts, each one under a different NAME under BASE_DIR. If omitted, it defaults to $BASE_DIR.
 
   --full-path=FULL_PATH
-      If the path of the dropbox account is not of the form \$HOME/BASE_DIR/NAME, you can set the full path with this option. It must exist. If it doesn't start with a slash (/) it will be considered as a subdirectory of \$HOME. Besides it will not be followed by /NAME; NAME still will be used as the container name. This option overrides the --base-dir option above.
+      If the path of the dropbox account is not of the form \$HOME/BASE_DIR/NAME, you can set the full path with this option. It must exist. If it doesn't start with a slash (/) it will be considered as a subdirectory of \$HOME. Besides it will not be followed by /NAME, NAME still will be used as the container name. This option overrides the --base-dir option above.
 
   -c, --command=CMD
-      Override default command with CMD (e.g. bash). At this moment arguments are not supported.
+      Override default command with CMD (e.g. bash). At this moment arguments for CMD are not supported.
 
   -a, --attach[=CMD]
-      Attach CMD to a running container. If omitted, CMD defaults to $ATTACH_CMD in this option. This option is always interactive. Other options are ignored
+      Attach CMD to a running container. If omitted, CMD defaults to $ATTACH_CMD in this option. This option is always interactive. Other options are ignored.
 
   --restart=RESTART_POLICY
       Set the restart policy for the container. Applies only to daemon mode. Default is 'always'. See docker documentation for details.
@@ -79,7 +81,10 @@ Options are:
       Show no info at all.
 
   --debug
-      Show specific info for debugging purpose."
+      Show additional info for debugging this script."
+
+# 0 argument message
+[[ "$#" == "0" ]] && echo "Using default directories. Use -h or --help option for details."
 
 # check existence of directory supplied by user
 check_user_supplied_dir () {
@@ -99,19 +104,24 @@ for i in "$@"; do
   eqpos=`expr index "$i" "="`
 
   if [[ $eqpos > 0 ]]; then
+
     opt="${i:0:$eqpos}"
     arg="${i:$eqpos}"
+
     if [[ "$arg" =~ ^[$VALID_INITIAL][$VALID_NAME]*$ ]]; then
       opt+="NAME"
+
     elif [[ "$arg" =~ ^/?[$VALID_INITIAL][$VALID_FILENAME]*$ ]]; then
       opt+="FILENAME"
       arg=$(sed 's:/\+$::' <<<$arg)      # remove last bars
+
     else
       opt+="OTHER_ARGUMENT"
     fi
-    if [[ "$opt" == *NAME && "$arg" == *..* || "$arg" == "//" ]]; then
+
+    [[ "$opt" == *NAME && ( "$arg" == *..* || "$arg" == *//* ) ]] && \
       opt="INVALID_FILENAME"
-    fi
+
   elif [[ "$i" == -* ]]; then
     opt=$i
     arg=
@@ -135,12 +145,12 @@ for i in "$@"; do
     BASE_DIR=${arg#/}             # remove eventual first bar
     ;;
 
-    --full-path=FILENAME)
+    --full-path=*NAME)
     check_user_supplied_dir
     FULL_PATH=$arg
     ;;
 
-    -c=FILENAME|--command=FILENAME)
+    -c=*NAME|--command=*NAME)
     DEFAULT_CMD=$arg
     ;;
 
@@ -148,7 +158,7 @@ for i in "$@"; do
     ATTACH_MODE=1
     ;;
 
-    -a=FILENAME|--attach=FILENAME)
+    -a=*NAME|--attach=*NAME)
     ATTACH_MODE=1
     ATTACH_CMD=$arg
     ;;
@@ -184,7 +194,7 @@ for i in "$@"; do
     ;;
 
     INVALID_FILENAME)
-    ERROR_MSG="Name and path cannot contain two adjacent dots (..): $arg"
+    ERROR_MSG="Name and path cannot contain two adjacent dots or slashes: $arg"
     ;;
 
     -*=OTHER_ARGUMENT)
@@ -215,7 +225,7 @@ done
 check_create_dir () {
   if [[ ! -d "$1" ]]; then
     [[ -z "$QUIET" ]] && echo "Creating directory '$1'..."
-    mkdir "$1" || {
+    mkdir $2 "$1" || {
       echo "Could not create $1" >&2
       exit 1
     }
@@ -225,7 +235,7 @@ check_create_dir () {
 # set fullpath
 if [[ -z $FULL_PATH ]]; then
   FULL_PATH=$HOME/$BASE_DIR/$NAME
-  check_create_dir "$FULL_PATH"
+  check_create_dir "$FULL_PATH" -p
 fi
 
 # test existence of Dropbox and .dropbox directories
@@ -239,9 +249,7 @@ check_dbox_dirs .dropbox
 check_dbox_dirs .dropbox-dist
 
 # if dropbox is empty set INTERACTIVE mode
-if [ ! "$(ls -A $FULL_PATH/.dropbox)" ]
-  INTERACTIVE=1
-fi
+[[ ! "$(ls -A $FULL_PATH/.dropbox)" ]] && INTERACTIVE=1
 
 # attach mode
 if [[ -n "$ATTACH_MODE" ]]; then
@@ -254,14 +262,14 @@ else
     DOCKER_OPT="-d --restart=$RESTART_POLICY"
   fi
 
-  VOLUMES=" \
-    -v $FULL_PATH/Dropbox:/dbox/Dropbox \
-    -v $FULL_PATH/.dropbox:/dbox/.dropbox \
+  VOLUMES=" \\
+    -v $FULL_PATH/Dropbox:/dbox/Dropbox \\
+    -v $FULL_PATH/.dropbox:/dbox/.dropbox \\
     -v $FULL_PATH/.dropbox-dist:/dbox/.dropbox-dist"
 
-  ENV_DBOX=" \
-    -e DBOX_UID=`id -u` \
-    -e DBOX_GID=`id -g` \
+  ENV_DBOX=" \\
+    -e DBOX_UID=`id -u` \\
+    -e DBOX_GID=`id -g` \\
   "
 
   IMAGE="sonysantos/dropbox:latest"
@@ -269,4 +277,7 @@ else
   DOCKER_CMD="docker run $DOCKER_OPT --name $NAME $VOLUMES $ENV_DBOX $IMAGE $DEFAULT_CMD"
 fi
 
-[[ -z "$QUIET" || -n "$DEBUG" ]] && echo -e "\nGenerated Docker command:\n$DOCKER_CMD"
+[[ -z "$QUIET" || -n "$DEBUG" ]] && \
+  echo -e "\nGenerated Docker command:\n$DOCKER_CMD"
+
+[[ -z "$DEBUG" ]] && `$DOCKER_CMD`
