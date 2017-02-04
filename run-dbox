@@ -262,14 +262,14 @@ else
     DOCKER_OPT="-d --restart=$RESTART_POLICY"
   fi
 
-  VOLUMES=" \\
-    -v $FULL_PATH/Dropbox:/dbox/Dropbox \\
-    -v $FULL_PATH/.dropbox:/dbox/.dropbox \\
+  VOLUMES="
+    -v $FULL_PATH/Dropbox:/dbox/Dropbox
+    -v $FULL_PATH/.dropbox:/dbox/.dropbox
     -v $FULL_PATH/.dropbox-dist:/dbox/.dropbox-dist"
 
-  ENV_DBOX=" \\
-    -e DBOX_UID=`id -u` \\
-    -e DBOX_GID=`id -g` \\
+  ENV_DBOX="
+    -e DBOX_UID=`id -u`
+    -e DBOX_GID=`id -g`
   "
 
   IMAGE="sonysantos/dropbox:latest"
@@ -282,5 +282,5 @@ fi
 
 [[ -z "$DEBUG" ]] && {
   [[ -z "$QUIET" ]] && echo -e "\nExecuting Docker Command..."
-  `$DOCKER_CMD`
+  $DOCKER_CMD
 }

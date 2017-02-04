@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # test .dropbox-dist
-if [ ! -d "/dbox/.dropbox-dist" ]
+if [[ ! -d "/dbox/.dropbox-dist" ]]; then
   mkdir /dbox/.dropbox-dist
   chown $DBOX_UID:$DBOX_GID /dbox/.dropbox-dist
 fi
 
 # fill it if empty
-if [ ! "$(ls -A /dbox/.dropbox-dist)" ]
+if [[ ! "$(ls -A /dbox/.dropbox-dist)" ]]; then
   cd /dbox/.dropbox-initial-dist
   cp -rp * /dbox/.dropbox-dist/
 fi
