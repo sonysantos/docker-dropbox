@@ -18,4 +18,7 @@ cd /dbox
 usermod -u $DBOX_UID dbox
 usermod -g $DBOX_GID dbox
 
+# avoid downloading dropbox updates
+chmod a-w .
+
 exec gosu dbox "$@"
