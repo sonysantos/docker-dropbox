@@ -14,8 +14,12 @@ VALID_INITIAL="a-zA-Z0-9_."
 VALID_NAME="$VALID_INITIAL-"
 VALID_FILENAME=" /$VALID_NAME"
 ERROR_MSG=
+DO_NOTHING=
+IMAGE_TAG=latest
 
 SHORT_HELP="
+Generate and execute a 'docker run' command to run a sonysantos/dropbox container.
+
 Usage: $0 [options] [NAME]
 
 NAME is the container name and the base directory for dropbox
@@ -30,7 +34,9 @@ Options:
   -c, --command=CMD        Set alternative command for the container
   -a, --attach[=CMD]       Attach CMD (default: bash) to a running container
   --restart=RESTART_POLICY Set restart policy for daemon mode
+  -t, --tag=TAG            Use sonysantos/dropbox:TAG image
   -h, --help               Display detailed help
+  -n, --do-nothing         Do not execute; just show the what would be done
   -q, --quiet              Show no info at all
   --debug                  Show additional info for debugging this script
 "
@@ -78,14 +84,20 @@ Options are:
   --restart=RESTART_POLICY
       Set the restart policy for the container. Applies only to daemon mode. Default is 'always'. See docker documentation for details.
 
+  -t, --tag=TAG
+      Use a specific tag for the image, that is, sonysantos/dropbox:TAG. Default is 'latest'.
+
   -h, --help
       Display this message.
+
+  -n, --do-nothing
+      Do not execute; just show the 'docker run' command generated.
 
   -q, --quiet
       Show no info at all.
 
   --debug
-      Show additional info for debugging this script."
+      Show additional info for debugging this script, and do not execute."
 
 # 0 argument message
 [[ "$#" == "0" ]] && echo "Using default directories. Use -h or --help option for details."
@@ -158,6 +170,10 @@ for i in "$@"; do
     DEFAULT_CMD=$arg
     ;;
 
+    -t=*NAME|--tag=*NAME)
+    IMAGE_TAG=$arg
+    ;;
+
     -a|--attach)
     ATTACH_MODE=1
     ;;
@@ -179,6 +195,10 @@ for i in "$@"; do
     # help | add blank lines | format | remove added blank lines
     echo "$LONG_HELP" | sed G | fmt -c | sed -e '$d' -e '/^$/ N; s/\n//'
     exit 0
+    ;;
+
+    -n|--do-nothing)
+    DO_NOTHING=1
     ;;
 
     -q|--quiet)
@@ -257,7 +277,7 @@ else
 
   ENV_DBOX="-e DBOX_UID=`id -u` -e DBOX_GID=`id -g`"
 
-  IMAGE="sonysantos/dropbox:latest"
+  IMAGE="sonysantos/dropbox:$IMAGE_TAG"
 
   DOCKER_CMD="docker run $DOCKER_OPT
     --name $NAME
@@ -267,10 +287,13 @@ else
     $DEFAULT_CMD"
 fi
 
-[[ -z "$QUIET" || -n "$DEBUG" ]] && \
+[[ -n "$DEBUG" ]] && DO_NOTHING=1
+[[ -n "$DO_NOTHING" ]] && QUIET=
+
+[[ -z "$QUIET" ]] && \
   echo -e "\nGenerated Docker command:\n$DOCKER_CMD"
 
-[[ -z "$DEBUG" ]] && {
+[[ -z "$DO_NOTHING" ]] && {
   [[ -z "$QUIET" ]] && echo -e "\nExecuting Docker Command..."
   $DOCKER_CMD
 }
