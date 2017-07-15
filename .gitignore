@@ -1,0 +1,5 @@
+archive/
+debug
+*.bak
+*.txt
+tests/
