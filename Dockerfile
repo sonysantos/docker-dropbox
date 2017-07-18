@@ -3,7 +3,9 @@ FROM ubuntu:16.04
 MAINTAINER Sony Santos - sony.fermino(at)gmail
 
 # install things
-RUN apt-get update && apt-get install -y wget gosu python2.7 && ln -s /usr/bin/python2.7 /usr/bin/python
+RUN apt-get update \
+  && apt-get install -y wget gosu python2.7 libglib2.0-0 \
+  && ln -s /usr/bin/python2.7 /usr/bin/python
 
 # clean install
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
