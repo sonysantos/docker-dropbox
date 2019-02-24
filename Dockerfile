@@ -4,8 +4,7 @@ MAINTAINER Sony Santos - sony.fermino(at)gmail
 
 # install things
 RUN apt-get update \
-  && apt-get install -y wget gosu python2.7 python3 libglib2.0-0 \
-  && ln -s /usr/bin/python2.7 /usr/bin/python
+  && apt-get install -y wget gosu python3 libglib2.0-0
 
 # clean install
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
