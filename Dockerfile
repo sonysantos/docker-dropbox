@@ -4,7 +4,7 @@ MAINTAINER Sony Santos - sony.fermino(at)gmail
 
 # install things
 RUN apt-get update \
-  && apt-get install -y wget gosu python3 libglib2.0-0
+  && apt-get install -y wget gosu python3 libglib2.0-0 libatomic1
 
 # clean install
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
