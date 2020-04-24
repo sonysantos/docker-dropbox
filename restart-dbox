@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# stop
+echo "Stopping dbox..."
+docker stop dbox
+docker rm dbox
+
+# time to automatically prune files
+echo "Pruning files..."
+sleep 10
+
+# start
+echo "Restarting dbox..."
+`dirname $(realpath $0)`/run-dbox
