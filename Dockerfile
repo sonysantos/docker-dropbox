@@ -4,7 +4,9 @@ MAINTAINER Sony Santos - sony.fermino(at)gmail
 
 # install things
 RUN apt-get update \
-  && apt-get install -y wget gosu python3 libglib2.0-0 libatomic1
+  && apt-get install -y wget gosu python3 libglib2.0-0 libatomic1 libglapi-mesa libxext6 \
+     libxdamage-dev libxcb-glx0 libxcb-dri2-0 libxcb-dri3-0 libxcb-present-dev \
+     libxshmfence-dev libxxf86vm-dev
 
 # clean install
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
