@@ -1,0 +1,10 @@
+#!/bin/bash
+
+CONTAINER=dbox
+
+[[ -n "$1" ]] && CONTAINER="$1"
+
+echo Entering into $CONTAINER container...
+
+docker exec -it $CONTAINER /bin/bash
+

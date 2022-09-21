@@ -1,0 +1,11 @@
+#!/bin/bash
+
+CONTAINER=dbox
+
+[[ -n "$1" ]] && CONTAINER="$1"
+
+echo Cleaning /tmp inside the $CONTAINER container...
+
+# That complex rm command is to exclude . and ..
+docker exec $CONTAINER /bin/bash -c 'rm -rf tmp/.[!.]* tmp/..?* tmp/*' && echo Done.
+

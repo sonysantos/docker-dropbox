@@ -73,5 +73,16 @@ To run other dropbox accounts in paralell, simply append a nickname for the drop
     ./run-dbox -i personal-account  # interactive
     ./run-dbox project-y            # daemon
 
+### Enter into the container
+
+To enter into the dropbox container (e.g., to see what's going on):
+
+    ./enter [<container_name>]      # container_name defaults to dbox
+
+### Clean /tmp folder inside container
+
+    ./clean-tmp [<container_name]   # container_name defaults to dbox
+
+## General info
 
 Based on Ubuntu:16.04 image.
