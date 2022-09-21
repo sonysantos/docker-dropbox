@@ -81,7 +81,7 @@ To enter into the dropbox container (e.g., to see what's going on):
 
 ### Clean /tmp folder inside container
 
-    ./clean-tmp [<container_name]   # container_name defaults to dbox
+    ./clean-tmp [<container_name>]   # container_name defaults to dbox
 
 ## General info
 
